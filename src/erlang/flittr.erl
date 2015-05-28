@@ -1,10 +1,32 @@
 -module(flittr).
 
--export([get_photos/2,search_photos/4,query/1,photo_source_url_from_photoref/1, web_page_url_from_photoref/1]).
+-export([get_photos/2,search_photos/4,query/1,photo_source_url_from_photoref/1, web_page_url_from_photoref/1,get_person/3]).
 
 get_photos(UserId, ApiKey)->
   Url=lists:flatten(["http://api.flickr.com/services/rest/?method=flickr.people.getPublicPhotos&api_key=", ApiKey, "&user_id=", UserId, "&format=rest"]), 
   query(Url).	
+
+get_person(UserId, ApiKey, PersonId)->
+    Url=lists:flatten(["https://api.flickr.com/services/rest/?method=flickr.people.getInfo&api_key=", ApiKey, "&user_id=", PersonId, "&format=rest"]),
+    {ok, {{Version, 200, ReasonPhrase}, Headers, Body}} =
+      httpc:request(get, {Url, []}, [], []),
+      Response=parse_xml(Body),
+      {rsp,[{stat,"ok"}],RespBody}=Response,
+      [_|[Person|_]]=RespBody,
+      {person,
+         [{id,Id},
+          {nsid,NsId},
+          {ispro,IsPro},
+          {can_buy_pro,CanBuyPro},
+          {iconserver,IconServer},
+          {iconfarm,IconFarm},
+          {path_alias,PathAlias},
+          {has_stats,HasStats}],RawData}=Person,
+           RawXml=lists:filter(fun(X)-> case X of "\n\t" -> false; "\n" -> false; _ -> true end end, RawData),
+       MetaData=lists:map(fun(X)-> {Key,_,Data}=X, {Key,lists:flatten(Data)} end,RawXml),
+      io:format("~p~n", [MetaData]).
+      
+
 
 query(Url)->
 {ok, {{Version, 200, ReasonPhrase}, Headers, Body}} =
