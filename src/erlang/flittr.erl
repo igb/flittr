@@ -1,6 +1,6 @@
 -module(flittr).
 
--export([get_photos/2,search_photos/4,query/1,photo_source_url_from_photoref/1, web_page_url_from_photoref/1,get_person/3]).
+-export([get_photos/2,search_photos/4,query/1,photo_source_url_from_photoref/1, web_page_url_from_photoref/1,get_person/3,owner_from_photoref/1,get_license/1]).
 
 get_photos(UserId, ApiKey)->
   Url=lists:flatten(["http://api.flickr.com/services/rest/?method=flickr.people.getPublicPhotos&api_key=", ApiKey, "&user_id=", UserId, "&format=rest"]), 
@@ -24,7 +24,15 @@ get_person(UserId, ApiKey, PersonId)->
           {has_stats,HasStats}],RawData}=Person,
            RawXml=lists:filter(fun(X)-> case X of "\n\t" -> false; "\n" -> false; _ -> true end end, RawData),
        MetaData=lists:map(fun(X)-> {Key,_,Data}=X, {Key,lists:flatten(Data)} end,RawXml),
-      io:format("~p~n", [MetaData]).
+       [{id,Id},
+          {nsid,NsId},
+          {ispro,IsPro},
+          {can_buy_pro,CanBuyPro},
+          {iconserver,IconServer},
+          {iconfarm,IconFarm},
+          {path_alias,PathAlias},
+          {has_stats,HasStats},
+	  {metadata,MetaData}].
       
 
 
@@ -53,9 +61,27 @@ search_photos(UserId, ApiKey, SearchTerm, License)->
 photo_source_url_from_photoref({Id, Owner, Secret,Server,Farm,Title,IsPublic, IsFriend, IsFamily}) ->
   lists:flatten(["https://farm", Farm, ".staticflickr.com/",Server,"/",Id,"_",Secret,"_b.jpg"]).
 
+owner_from_photoref({Id, Owner, Secret,Server,Farm,Title,IsPublic, IsFriend, IsFamily}) ->
+  Owner.
+
+
+
 web_page_url_from_photoref({Id, Owner, Secret,Server,Farm,Title,IsPublic, IsFriend, IsFamily}) ->
   lists:flatten(["https://www.flickr.com/photos/", Owner, "/", Id]).
 
 parse_xml(Message)->
     {Xml, _}=xmerl_scan:string(Message),
     xmerl_lib:simplify_element(Xml).
+
+get_license(Id)->
+  case Id of
+   "0" -> {"All Rights Reserved", ""};
+   "1" -> {"Attribution-NonCommercial-ShareAlike License", "http://creativecommons.org/licenses/by-nc-sa/2.0/"};
+   "2" -> {"Attribution-NonCommercial License", "http://creativecommons.org/licenses/by-nc/2.0/"};
+   "3" -> {"Attribution-NonCommercial-NoDerivs License", "http://creativecommons.org/licenses/by-nc-nd/2.0/"};
+   "4" -> {"Attribution License", "http://creativecommons.org/licenses/by/2.0/"};
+   "5" -> {"Attribution-ShareAlike License", "http://creativecommons.org/licenses/by-sa/2.0/"};
+   "6" -> {"Attribution-NoDerivs License", "http://creativecommons.org/licenses/by-nd/2.0/"};
+   "7" -> {"No known copyright restrictions", "http://flickr.com/commons/usage/"};
+   "8" -> {"United States Government Work", "http://www.usa.gov/copyright.shtml"}
+ end.
