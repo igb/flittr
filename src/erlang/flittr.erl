@@ -1,6 +1,6 @@
 -module(flittr).
 
--export([get_photos/2,search_photos/4,query/1,photo_source_url_from_photoref/1, web_page_url_from_photoref/1,get_person/3,owner_from_photoref/1,get_license/1]).
+-export([get_photos/2,search_user_photos/4,search_photos/4,query/1,photo_source_url_from_photoref/1, web_page_url_from_photoref/1,get_person/3,owner_from_photoref/1,get_license/1,id_from_photoref/1,get_photo_info/2]).
 
 get_photos(UserId, ApiKey)->
   Url=lists:flatten(["http://api.flickr.com/services/rest/?method=flickr.people.getPublicPhotos&api_key=", ApiKey, "&user_id=", UserId, "&format=rest"]), 
@@ -58,15 +58,31 @@ search_photos(UserId, ApiKey, SearchTerm, License)->
      Url=lists:flatten(["https://api.flickr.com/services/rest/?method=flickr.photos.search&api_key=", ApiKey,  "&text=", http_uri:encode(SearchTerm), "&license=", License, "&format=rest"]),
      query(Url).
 
+search_user_photos(UserId, ApiKey, SearchTerm, License)->
+     Url=lists:flatten(["https://api.flickr.com/services/rest/?method=flickr.photos.search&api_key=", ApiKey, "&user_id=", UserId,"&text=", http_uri:encode(SearchTerm), "&license=", License, "&format=rest"]),
+     query(Url).
+
+get_photo_info(PhotoId,ApiKey)->
+	Url=lists:flatten(["https://api.flickr.com/services/rest/?method=flickr.photos.getInfo&api_key=", ApiKey,  "&photo_id=", PhotoId, "&format=rest"]),
+	    {ok, {{Version, 200, ReasonPhrase}, Headers, Body}} =
+      httpc:request(get, {Url, []}, [], []),
+      Response=parse_xml(Body),
+      {rsp,[{stat,"ok"}],RespBody}=Response,
+      [_,Photo,_]=RespBody,
+      {photo, Attributes,_}=Photo,
+      Attributes. 
+
 photo_source_url_from_photoref({Id, Owner, Secret,Server,Farm,Title,IsPublic, IsFriend, IsFamily}) ->
   lists:flatten(["https://farm", Farm, ".staticflickr.com/",Server,"/",Id,"_",Secret,"_b.jpg"]).
 
-owner_from_photoref({Id, Owner, Secret,Server,Farm,Title,IsPublic, IsFriend, IsFamily}) ->
+owner_from_photoref({_,Owner, _,_,_,_,_, _, _})->
   Owner.
 
+id_from_photoref({Id,_, _,_,_,_,_, _, _}) ->
+  Id.
 
 
-web_page_url_from_photoref({Id, Owner, Secret,Server,Farm,Title,IsPublic, IsFriend, IsFamily}) ->
+web_page_url_from_photoref({Id,Owner, _,_,_,_,_, _, _}) ->
   lists:flatten(["https://www.flickr.com/photos/", Owner, "/", Id]).
 
 parse_xml(Message)->
