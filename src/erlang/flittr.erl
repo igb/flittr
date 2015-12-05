@@ -1,9 +1,13 @@
 -module(flittr).
 
--export([get_photos/2,search_user_photos/4,search_photos/4,query/1,photo_source_url_from_photoref/1, web_page_url_from_photoref/1,get_person/3,owner_from_photoref/1,get_license/1,id_from_photoref/1,get_photo_info/2]).
+-export([get_photos/2,search_user_photos/4,search_photos/4,query/1,photo_source_url_from_photoref/1, web_page_url_from_photoref/1,get_person/3,owner_from_photoref/1,get_license/1,id_from_photoref/1,get_photo_info/2,get_photoset/3]).
 
 get_photos(UserId, ApiKey)->
   Url=lists:flatten(["http://api.flickr.com/services/rest/?method=flickr.people.getPublicPhotos&api_key=", ApiKey, "&user_id=", UserId, "&format=rest"]), 
+  query(Url).	
+
+get_photoset(UserId, PhotoSetId, ApiKey)->
+  Url=lists:flatten(["https://api.flickr.com/services/rest/?method=flickr.photosets.getPhotos&api_key=", ApiKey, "&user_id=", UserId, "&photoset_id=", PhotoSetId, "&format=rest"]), 
   query(Url).	
 
 get_person(UserId, ApiKey, PersonId)->
@@ -42,16 +46,44 @@ query(Url)->
       Response=parse_xml(Body),
       {rsp,[{stat,"ok"}],RespBody}=Response,
       [_|[Photos|_]]=RespBody,
-      {photos,[{page, Page},{pages, Pages},{perpage, PerPage}, {total, Total}],PhotoRefs}=Photos,
-      Refs=lists:map(fun({_,Ref,_})->[{id,Id},
-   {owner,Owner},
-   {secret,Secret},
-   {server,Server},
-   {farm,Farm},
-   {title,Title},
-   {ispublic,IsPublic},
-   {isfriend,IsFriend},
-   {isfamily,IsFamily}]=Ref,{Id, Owner, Secret,Server,Farm,Title,IsPublic, IsFriend, IsFamily} end, lists:filter(fun(X)-> case X of "\n\t" -> false; "\n" -> false; _ -> true end end, PhotoRefs)),
+      case Photos of
+      	   {photos,_,_} ->RefParser=fun(Ref)->[{id,Id},
+				      {owner,Owner},
+   				      {secret,Secret},
+   				      {server,Server},
+   				      {farm,Farm},
+   				      {title,Title},
+   				      {ispublic,IsPublic},
+   				      {isfriend,IsFriend},
+   				      {isfamily,IsFamily}]=Ref,
+				      {Id, Owner, Secret,Server,Farm,Title,IsPublic, IsFriend, IsFamily} 
+				      end,
+				      {photos,[{page, Page},{pages, Pages},{perpage, PerPage}, {total, Total}],PhotoRefs}=Photos;
+	   {photoset,_,_} -> RefParser=fun(Ref)->[{id,Id},
+   				      {secret,Secret},
+   				      {server,Server},
+   				      {farm,Farm},
+   				      {title,Title},
+				      {isprimary,IsPrimary},
+   				      {ispublic,IsPublic},
+   				      {isfriend,IsFriend},
+   				      {isfamily,IsFamily}]=Ref,
+				      {Id,Secret,Server,Farm,Title,IsPublic, IsPrimary, IsFriend, IsFamily}
+      				      end,
+				      {photoset,[{id, Id},{primary, Primary},{owner, Owner},{ownername, OwnerName}, {page, Page},{per_page, PerPage},{perpage, PerPage}, {pages, Pages},{total, Total}, {title, Title}],PhotoRefs}=Photos
+	end,   
+      
+      
+      Refs=lists:map(fun({_,Ref,_})->RefParser(Ref)
+				     end,
+				       lists:filter(fun(X)-> 
+				       			     case X of 
+							     	  "\n\t" -> false; 
+							     	  "\n" -> false; 
+								  _ -> true 
+							     end 
+						  end, PhotoRefs)
+			),
       {Page, Pages, PerPage, Total, Refs}.
 
 search_photos(UserId, ApiKey, SearchTerm, License)->
