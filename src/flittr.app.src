@@ -1,0 +1,13 @@
+{application, flittr,
+ [
+  {description, ""},
+  {vsn, "1"},
+  {registered, []},
+  
+  {applications, [
+                  kernel,
+                  stdlib
+                 ]},
+  {mod, { flittr_app, []}},
+  {env, []}
+ ]}.
