@@ -68,7 +68,7 @@ query(Url)->
    				      {ispublic,IsPublic},
    				      {isfriend,IsFriend},
    				      {isfamily,IsFamily}]=Ref,
-				      {Id,Secret,Server,Farm,Title,IsPublic, IsPrimary, IsFriend, IsFamily}
+				      {Id,owner_placeholder,Secret,Server,Farm,Title,IsPublic, IsPrimary, IsFriend, IsFamily}
       				      end,
 				      {photoset,[{id, Id},{primary, Primary},{owner, Owner},{ownername, OwnerName}, {page, Page},{per_page, PerPage},{perpage, PerPage}, {pages, Pages},{total, Total}, {title, Title}],PhotoRefs}=Photos
 	end,   
