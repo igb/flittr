@@ -104,7 +104,11 @@ get_photo_info(PhotoId,ApiKey)->
       {photo, Attributes,_}=Photo,
       Attributes. 
 
-photo_source_url_from_photoref({Id, Owner, Secret,Server,Farm,Title,IsPublic, IsFriend, IsFamily}) ->
+photo_source_url_from_photoref(PhotoRef) ->
+  case  tuple_size(PhotoRef) of
+    9 -> {Id, _, Secret,Server,Farm, _,_,_,_};
+    10 -> {Id, _, Secret,Server,Farm, _,_,_,_,_}
+  end,
   lists:flatten(["https://farm", Farm, ".staticflickr.com/",Server,"/",Id,"_",Secret,"_b.jpg"]).
 
 owner_from_photoref({_,Owner, _,_,_,_,_, _, _})->
