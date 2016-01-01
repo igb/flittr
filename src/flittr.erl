@@ -1,6 +1,6 @@
 -module(flittr).
 
--export([get_photos/2,search_user_photos/4,search_photos/4,query/1,photo_source_url_from_photoref/1, web_page_url_from_photoref/1,get_person/3,owner_from_photoref/1,get_license/1,id_from_photoref/1,get_photo_info/2,get_photoset/3]).
+-export([get_photos/2,search_user_photos/4,search_photos/4,query/1,photo_source_url_from_photoref/1, photo_source_url_from_photoref/2, web_page_url_from_photoref/1,get_person/3,owner_from_photoref/1,get_license/1,id_from_photoref/1,get_photo_info/2,get_photoset/3]).
 
 get_photos(UserId, ApiKey)->
   Url=lists:flatten(["http://api.flickr.com/services/rest/?method=flickr.people.getPublicPhotos&api_key=", ApiKey, "&user_id=", UserId, "&format=rest"]), 
@@ -105,11 +105,31 @@ get_photo_info(PhotoId,ApiKey)->
       Attributes. 
 
 photo_source_url_from_photoref(PhotoRef) ->
+photo_source_url_from_photoref(PhotoRef, large).
+
+photo_source_url_from_photoref(PhotoRef, Size) ->
+
   case  tuple_size(PhotoRef) of
     9 -> {Id, _, Secret,Server,Farm, _,_,_,_}=PhotoRef;
     10 -> {Id, _, Secret,Server,Farm, _,_,_,_,_}=PhotoRef
   end,
-  lists:flatten(["https://farm", Farm, ".staticflickr.com/",Server,"/",Id,"_",Secret,"_b.jpg"]).
+
+  lists:flatten(["https://farm", Farm, ".staticflickr.com/",Server,"/",Id,"_",Secret,"_", get_photo_size_key(Size),".jpg"]).
+
+get_photo_size_key(Size)->
+  case Size of 
+    square -> "s"; 
+    thumb -> "t";
+    square_2 -> "q";
+    small -> "m";
+    small_2 -> "n";
+    medium -> "";
+    medium_2 -> "z";
+    medium_3 -> "c";
+    large-> "b";
+    orginal -> "o"
+   end.      
+
 
 owner_from_photoref({_,Owner, _,_,_,_,_, _, _})->
   Owner.
