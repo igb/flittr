@@ -106,8 +106,8 @@ get_photo_info(PhotoId,ApiKey)->
 
 photo_source_url_from_photoref(PhotoRef) ->
   case  tuple_size(PhotoRef) of
-    9 -> {Id, _, Secret,Server,Farm, _,_,_,_};
-    10 -> {Id, _, Secret,Server,Farm, _,_,_,_,_}
+    9 -> {Id, _, Secret,Server,Farm, _,_,_,_}=PhotoRef;
+    10 -> {Id, _, Secret,Server,Farm, _,_,_,_,_}=PhotoRef
   end,
   lists:flatten(["https://farm", Farm, ".staticflickr.com/",Server,"/",Id,"_",Secret,"_b.jpg"]).
 
